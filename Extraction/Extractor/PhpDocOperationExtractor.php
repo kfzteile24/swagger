@@ -20,6 +20,27 @@ class PhpDocOperationExtractor implements ExtractorInterface
     private $exceptionResponseCodes = [];
 
     /**
+     * Return if the extractor can extract the requested data or not.
+     *
+     * @param $source
+     * @param $type
+     * @param ExtractionContextInterface $extractionContext
+     * @return boolean
+     */
+    public function canExtract($source, $type, ExtractionContextInterface $extractionContext)
+    {
+        if (!$source instanceof ReflectionMethod) {
+            return false;
+        }
+
+        if (!$type instanceof Operation) {
+            return false;
+        }
+
+        return true;
+    }
+
+    /**
      * Extract the requested data.
      *
      * The system is a incrementing extraction system. A extractor can be call before you and you must complete the
@@ -41,49 +62,36 @@ class PhpDocOperationExtractor implements ExtractorInterface
         $factory = DocBlockFactory::createInstance();
         $docBlock = $factory->create($method->getDocComment());
 
-        if (!$operation->summary) {
+        if(!$operation->summary) {
             $operation->summary = $docBlock->getSummary();
         }
 
-        if ($operation->description) {
+        if($operation->description) {
             $operation->description = $docBlock->getDescription();
         }
 
-        $returnTags = $docBlock->getTagsByName('return');
-        if (empty($returnTags)) {
+        foreach ($docBlock->getTagsByName('return') as $returnTag) {
+            /* @var $returnTag \phpDocumentor\Reflection\DocBlock\Tags\Return_ */
             $response = new Response();
             $response->schema = $responseSchema = new Schema();
-            $response->description = "Generic 200 response";
+            $response->description = $returnTag->getDescription();
             $operation->responses[200] = $response;
+
             $subContext = $extractionContext->createSubContext();
             $subContext->setParameter('direction', 'out');
-            $extractionContext->getSwagger()->extract("test", $responseSchema, $subContext);
 
-        } else {
-            /** @var DocBlock\Tags\Return_ $returnTag */
-            foreach ($returnTags as $returnTag) {
-                /** @var Object_ $type */
-                $type = $returnTag->getType();
-                $response = new Response();
-                $response->schema = $responseSchema = new Schema();
-                $response->description = $returnTag->getDescription();
-                $operation->responses[200] = $response;
-
-                $subContext = $extractionContext->createSubContext();
-                $subContext->setParameter('direction', 'out');
-
-                $extractionContext->getSwagger()->extract((string)$type, $responseSchema, $subContext);
-            }
+            $extractionContext->getSwagger()->extract($returnTag->getType(), $responseSchema, $subContext);
         }
 
-        if ($docBlock->getTagsByName('deprecated')) {
-            $operation->deprecated = true;
+        if($docBlock->getTagsByName('deprecated')) {
+           $operation->deprecated = true;
         }
 
-        /* @var $throwTag \phpDocumentor\Reflection\DocBlock\Tags\Throws */
         foreach ($docBlock->getTagsByName('throws') as $throwTag) {
-            /** @var Object_ $type */
+            /* @var $throwTag \phpDocumentor\Reflection\DocBlock\Tags\Throws */
+
             $type = $throwTag->getType();
+            /** @var \Exception $exception */
             $exceptionClass = new \ReflectionClass((string)$type);
             $exception = $exceptionClass->newInstanceWithoutConstructor();
             list($code, $message) = $this->getExceptionInformation($exception);
@@ -94,7 +102,7 @@ class PhpDocOperationExtractor implements ExtractorInterface
             } else {
                 if (!$message) {
                     $exceptionClassDocBlock = new DocBlock($exceptionClass->getDocComment());
-                    $message = $exceptionClassDocBlock->getShortDescription();
+                    $message = $exceptionClassDocBlock->getDescription();
                 }
             }
 
@@ -158,28 +166,6 @@ class PhpDocOperationExtractor implements ExtractorInterface
         }
     }
 
-    /**
-     * Return if the extractor can extract the requested data or not.
-     *
-     * @param $source
-     * @param $type
-     * @param ExtractionContextInterface $extractionContext
-     *
-     * @return boolean
-     */
-    public function canExtract($source, $type, ExtractionContextInterface $extractionContext)
-    {
-        if (!$source instanceof ReflectionMethod) {
-            return false;
-        }
-
-        if (!$type instanceof Operation) {
-            return false;
-        }
-
-        return true;
-    }
-
     private function getExceptionInformation(\Exception $exception)
     {
         foreach ($this->exceptionResponseCodes as $class => $information) {
@@ -188,11 +174,11 @@ class PhpDocOperationExtractor implements ExtractorInterface
             }
         }
 
-        return [500, null];
+        return array(500, null);
     }
 
     public function registerExceptionResponseCodes($exceptionClass, $code = 500, $message = null)
     {
-        $this->exceptionResponseCodes[$exceptionClass] = [$code, $message];
+        $this->exceptionResponseCodes[$exceptionClass] = array($code, $message);
     }
 }
