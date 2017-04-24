@@ -60,7 +60,8 @@ class Swagger
         $validator = Validation::createValidatorBuilder()
             ->enableAnnotationMapping(new AnnotationReader())
             ->getValidator();
-        $result = $validator->validate($schema, null, true);
+//        $result = $validator->validate($schema, null, true);
+        $result = $validator->validate($schema, null, array(Constraint::DEFAULT_GROUP), true, true);
 
         if(count($result)) {
             throw new \InvalidArgumentException("" . $result);
@@ -117,4 +118,4 @@ class Swagger
 
         return $this->sortedExtractors;
     }
-} 
+}
