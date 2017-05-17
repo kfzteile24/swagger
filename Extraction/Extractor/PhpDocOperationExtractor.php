@@ -174,11 +174,11 @@ class PhpDocOperationExtractor implements ExtractorInterface
             }
         }
 
-        return array(500, null);
+        return [500, null];
     }
 
     public function registerExceptionResponseCodes($exceptionClass, $code = 500, $message = null)
     {
-        $this->exceptionResponseCodes[$exceptionClass] = array($code, $message);
+        $this->exceptionResponseCodes[$exceptionClass] = [$code, $message];
     }
 }
