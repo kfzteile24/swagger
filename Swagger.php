@@ -61,7 +61,7 @@ class Swagger
             ->enableAnnotationMapping(new AnnotationReader())
             ->getValidator();
         $result = $validator->validate($schema, null, true);
-    
+
         if(count($result)) {
             throw new \InvalidArgumentException("" . $result);
         }
