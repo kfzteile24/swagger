@@ -2,7 +2,6 @@
 
 namespace Draw\Swagger\Extraction\Extractor;
 
-use Draw\Swagger\Extraction\ExtractionContext;
 use Draw\Swagger\Extraction\ExtractionContextInterface;
 use Draw\Swagger\Extraction\ExtractionImpossibleException;
 use Draw\Swagger\Extraction\ExtractorInterface;
@@ -85,10 +84,10 @@ class JmsExtractor implements ExtractorInterface
 
         switch ($extractionContext->getParameter('direction')) {
             case 'in':
-                $modelContext = $subContext->getParameter('in-model-context', array());
+                $modelContext = $extractionContext->getParameter('in-model-context', array());
                 break;
             case 'out';
-                $modelContext = $subContext->getParameter('out-model-context', array());
+                $modelContext = $extractionContext->getParameter('out-model-context', array());
                 break;
         }
 
@@ -106,12 +105,12 @@ class JmsExtractor implements ExtractorInterface
                 continue;
             }
 
+            $propertySchema = new Schema();
             if ($type = $this->getNestedTypeInArray($item)) {
-                $propertySchema = new Schema();
                 $propertySchema->type = 'array';
-                $propertySchema->items = $this->extractTypeSchema($type, $subContext);
+                $propertySchema->items = $this->extractTypeSchema($type, $propertySchema, $subContext);
             } else {
-                $propertySchema = $this->extractTypeSchema($item->type['name'], $subContext);
+                $propertySchema = $this->extractTypeSchema($item->type['name'], $propertySchema, $subContext);
             }
 
             if ($item->readOnly) {
@@ -124,9 +123,9 @@ class JmsExtractor implements ExtractorInterface
         }
     }
 
-    private function extractTypeSchema($type, ExtractionContext $extractionContext)
+    private function extractTypeSchema($type, $schema, ExtractionContextInterface $extractionContext)
     {
-        $extractionContext->getSwagger()->extract($type, $schema = new Schema(), $extractionContext);
+        $extractionContext->getSwagger()->extract($type, $schema, $extractionContext);
 
         return $schema;
     }
@@ -172,7 +171,7 @@ class JmsExtractor implements ExtractorInterface
             $docBlock = $factory->create($ref->getProperty($item->name)->getDocComment());
         }
 
-        return $docBlock->getSummary();
+        return $docBlock->getDescription();
     }
 
     /**
