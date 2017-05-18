@@ -117,4 +117,4 @@ class Swagger
 
         return $this->sortedExtractors;
     }
-} 
+}

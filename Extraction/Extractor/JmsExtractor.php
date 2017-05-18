@@ -2,35 +2,36 @@
 
 namespace Draw\Swagger\Extraction\Extractor;
 
-use Draw\Swagger\Extraction\ExtractionContext;
 use Draw\Swagger\Extraction\ExtractionContextInterface;
 use Draw\Swagger\Extraction\ExtractionImpossibleException;
 use Draw\Swagger\Extraction\ExtractorInterface;
 use Draw\Swagger\Schema\Schema;
 use JMS\Serializer\Exclusion\GroupsExclusionStrategy;
 use JMS\Serializer\Metadata\VirtualPropertyMetadata;
+use JMS\Serializer\Metadata\PropertyMetadata;
 use JMS\Serializer\Naming\PropertyNamingStrategyInterface;
 use JMS\Serializer\SerializationContext;
 use Metadata\MetadataFactoryInterface;
-use Metadata\PropertyMetadata;
-use phpDocumentor\Reflection\DocBlock;
 use phpDocumentor\Reflection\DocBlockFactory;
 use ReflectionClass;
 
 class JmsExtractor implements ExtractorInterface
 {
     /**
-     * @var MetadataFactoryInterface
+     * @var \Metadata\MetadataFactoryInterface
      */
     private $factory;
 
     /**
-     * @var PropertyNamingStrategyInterface
+     * @var \JMS\Serializer\Naming\PropertyNamingStrategyInterface
      */
     private $namingStrategy;
 
     /**
      * Constructor, requires JMS Metadata factory
+     *
+     * @param \Metadata\MetadataFactoryInterface $factory
+     * @param \JMS\Serializer\Naming\PropertyNamingStrategyInterface $namingStrategy
      */
     public function __construct(
         MetadataFactoryInterface $factory,
@@ -62,14 +63,16 @@ class JmsExtractor implements ExtractorInterface
     }
 
     /**
+     *
      * Extract the requested data.
      *
      * The system is a incrementing extraction system. A extractor can be call before you and you must complete the
      * extraction.
      *
      * @param ReflectionClass $reflectionClass
-     * @param Schema $schema
-     * @param ExtractionContextInterface $extractionContext
+     * @param \Draw\Swagger\Schema\Schema $schema
+     * @param \Draw\Swagger\Extraction\ExtractionContextInterface $extractionContext
+     * @throws \Draw\Swagger\Extraction\ExtractionImpossibleException
      */
     public function extract($reflectionClass, $schema, ExtractionContextInterface $extractionContext)
     {
@@ -85,11 +88,13 @@ class JmsExtractor implements ExtractorInterface
 
         switch ($extractionContext->getParameter('direction')) {
             case 'in':
-                $modelContext = $subContext->getParameter('in-model-context', array());
+                $modelContext = $extractionContext->getParameter('in-model-context', []);
                 break;
             case 'out';
-                $modelContext = $subContext->getParameter('out-model-context', array());
+                $modelContext = $extractionContext->getParameter('out-model-context', []);
                 break;
+            default:
+                $modelContext = [];
         }
 
         $groups = [];
@@ -106,12 +111,12 @@ class JmsExtractor implements ExtractorInterface
                 continue;
             }
 
+            $propertySchema = new Schema();
             if ($type = $this->getNestedTypeInArray($item)) {
-                $propertySchema = new Schema();
                 $propertySchema->type = 'array';
-                $propertySchema->items = $this->extractTypeSchema($type, $subContext);
+                $propertySchema->items = $this->extractTypeSchema($type, $propertySchema, $subContext);
             } else {
-                $propertySchema = $this->extractTypeSchema($item->type['name'], $subContext);
+                $propertySchema = $this->extractTypeSchema($item->type['name'], $propertySchema, $subContext);
             }
 
             if ($item->readOnly) {
@@ -124,9 +129,16 @@ class JmsExtractor implements ExtractorInterface
         }
     }
 
-    private function extractTypeSchema($type, ExtractionContext $extractionContext)
+    /**
+     * @param string $type
+     * @param \Draw\Swagger\Schema\Schema $schema
+     * @param \Draw\Swagger\Extraction\ExtractionContextInterface $extractionContext
+     *
+     * @return mixed
+     */
+    private function extractTypeSchema($type, $schema, ExtractionContextInterface $extractionContext)
     {
-        $extractionContext->getSwagger()->extract($type, $schema = new Schema(), $extractionContext);
+        $extractionContext->getSwagger()->extract($type, $schema, $extractionContext);
 
         return $schema;
     }
@@ -135,7 +147,8 @@ class JmsExtractor implements ExtractorInterface
      * Check the various ways JMS describes values in arrays, and
      * get the value type in the array
      *
-     * @param  PropertyMetadata $item
+     * @param \JMS\Serializer\Metadata\PropertyMetadata $item
+     *
      * @return string|null
      */
     private function getNestedTypeInArray(PropertyMetadata $item)
@@ -155,8 +168,9 @@ class JmsExtractor implements ExtractorInterface
     }
 
     /**
-     * @param PropertyMetadata $item
-     * @return string
+     * @param \JMS\Serializer\Metadata\PropertyMetadata $item
+     *
+     * @return \phpDocumentor\Reflection\DocBlock\Description|string
      */
     private function getDescription(PropertyMetadata $item)
     {
@@ -172,12 +186,12 @@ class JmsExtractor implements ExtractorInterface
             $docBlock = $factory->create($ref->getProperty($item->name)->getDocComment());
         }
 
-        return $docBlock->getSummary();
+        return $docBlock->getDescription();
     }
 
     /**
      * @param \JMS\Serializer\Exclusion\ExclusionStrategyInterface[] $exclusionStrategies
-     * @param $item
+     * @param \JMS\Serializer\Metadata\PropertyMetadata $item
      * @return bool
      */
     private function shouldSkipProperty($exclusionStrategies, $item)
