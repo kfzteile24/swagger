@@ -77,4 +77,13 @@ class Info implements \ArrayAccess
      * @JMS\Type("string")
      */
     public $version;
+
+    /**
+     *
+     * @var array
+     *
+     * @Assert\NotBlank()
+     * @JMS\Type("array")
+     */
+    public $availableVersions;
 } 
