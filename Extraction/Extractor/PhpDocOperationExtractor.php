@@ -12,18 +12,20 @@ use Draw\Swagger\Schema\Response;
 use Draw\Swagger\Schema\Schema;
 use phpDocumentor\Reflection\DocBlock;
 use phpDocumentor\Reflection\DocBlockFactory;
-use phpDocumentor\Reflection\Types\Object_;
 use ReflectionMethod;
 
 class PhpDocOperationExtractor implements ExtractorInterface
 {
+    /**
+     * @var array
+     */
     private $exceptionResponseCodes = [];
 
     /**
      * Return if the extractor can extract the requested data or not.
      *
-     * @param $source
-     * @param $type
+     * @param mixed $source
+     * @param mixed $type
      * @param ExtractionContextInterface $extractionContext
      * @return boolean
      */
@@ -89,7 +91,6 @@ class PhpDocOperationExtractor implements ExtractorInterface
 
         foreach ($docBlock->getTagsByName('throws') as $throwTag) {
             /* @var $throwTag \phpDocumentor\Reflection\DocBlock\Tags\Throws */
-
             $type = $throwTag->getType();
             /** @var \Exception $exception */
             $exceptionClass = new \ReflectionClass((string)$type);
@@ -166,6 +167,11 @@ class PhpDocOperationExtractor implements ExtractorInterface
         }
     }
 
+    /**
+     * @param \Exception $exception
+     *
+     * @return array|mixed
+     */
     private function getExceptionInformation(\Exception $exception)
     {
         foreach ($this->exceptionResponseCodes as $class => $information) {
@@ -177,6 +183,13 @@ class PhpDocOperationExtractor implements ExtractorInterface
         return [500, null];
     }
 
+    /**
+     * @param string $exceptionClass
+     * @param int $code
+     * @param null $message
+     *
+     * @return void
+     */
     public function registerExceptionResponseCodes($exceptionClass, $code = 500, $message = null)
     {
         $this->exceptionResponseCodes[$exceptionClass] = [$code, $message];
