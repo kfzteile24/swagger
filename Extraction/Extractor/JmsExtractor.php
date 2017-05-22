@@ -114,7 +114,7 @@ class JmsExtractor implements ExtractorInterface
             $propertySchema = new Schema();
             if ($type = $this->getNestedTypeInArray($item)) {
                 $propertySchema->type = 'array';
-                $propertySchema->items = $this->extractTypeSchema($type, $propertySchema, $subContext);
+                $propertySchema->items = $this->extractTypeSchema($type, new Schema(), $subContext);
             } else {
                 $propertySchema = $this->extractTypeSchema($item->type['name'], $propertySchema, $subContext);
             }

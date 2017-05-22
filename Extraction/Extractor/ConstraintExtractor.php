@@ -77,13 +77,13 @@ abstract class ConstraintExtractor implements ConstraintExtractorInterface
         /* @var \Symfony\Component\Validator\Mapping\ClassMetadataInterface $classMetadata */
 
         foreach ($classMetadata->getConstrainedProperties() as $propertyName) {
-
+            $lowerPropertyName = strtolower(preg_replace('/(?<=\\w)(?=[A-Z])/',"_$1", $propertyName));
             //This is to prevent hading properties just because they have validation
-            if (!isset($schema->properties[$propertyName])) {
+            if (!isset($schema->properties[$lowerPropertyName])) {
                 continue;
             }
 
-            $constraints[$propertyName] = array();
+            $constraints[$lowerPropertyName] = array();
             foreach ($classMetadata->getPropertyMetadata($propertyName) as $propertyMetadata) {
                 /* @var $propertyMetadata */
 
@@ -108,7 +108,7 @@ abstract class ConstraintExtractor implements ConstraintExtractorInterface
                     array($this, 'supportConstraint')
                 );
 
-                $constraints[$propertyName] = array_merge($constraints[$propertyName], $finalPropertyConstraints);
+                $constraints[$lowerPropertyName] = array_merge($constraints[$lowerPropertyName], $finalPropertyConstraints);
             }
         }
 

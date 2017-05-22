@@ -9,7 +9,8 @@ use Symfony\Component\Validator\Constraints\NotBlank as SupportedConstraint;
 class NotBlankConstraintExtractor extends ConstraintExtractor
 {
     /**
-     * @param Constraint $constraint
+     * @param \Symfony\Component\Validator\Constraint $constraint
+     *
      * @return bool
      */
     public function supportConstraint(Constraint $constraint)
@@ -18,14 +19,17 @@ class NotBlankConstraintExtractor extends ConstraintExtractor
     }
 
     /**
-     * @param SupportedConstraint $constraint
-     * @param ConstraintExtractionContext $context
+     * @param \Symfony\Component\Validator\Constraint $constraint
+     * @param \Draw\Swagger\Extraction\Extractor\Constraint\ConstraintExtractionContext $context
+     *
+     * @return void
      */
     public function extractConstraint(Constraint $constraint, ConstraintExtractionContext $context)
     {
         $this->assertSupportConstraint($constraint);
         if(!isset($context->propertySchema->format)) {
             $context->propertySchema->format = "not empty";
+            $context->classSchema->required[] = $context->propertyName;
         }
     }
-}   
+}

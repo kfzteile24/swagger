@@ -15,8 +15,10 @@ class TypeSchemaExtractor implements ExtractorInterface
      */
     private $definitionAliases = array();
 
-    private $definitionHashes = array();
-
+    /**
+     * @param string $definition
+     * @param string $alias
+     */
     public function registerDefinitionAlias($definition, $alias)
     {
         $this->definitionAliases[$definition] = $alias;
@@ -91,7 +93,7 @@ class TypeSchemaExtractor implements ExtractorInterface
                 $name = $this->definitionAliases[$name];
             }
 
-            if($context && $hash = $this->getHash($name, $context)) {
+            if($context && $hash = $this->getHash($context)) {
                 $definitionName = $name . '?' . $hash;
             } else {
                 $definitionName = $name;
@@ -118,19 +120,16 @@ class TypeSchemaExtractor implements ExtractorInterface
         }
     }
 
-    private function getHash($modelName, array $context)
+    /**
+     * @param array $context
+     *
+     * @return string
+     */
+    private function getHash(array $context)
     {
         $hash = md5(http_build_query($context));
 
-        if(!array_key_exists($modelName, $this->definitionHashes)) {
-            $this->definitionHashes[$modelName] = [];
-        }
-
-        if(false === ($index = array_search($hash, $this->definitionHashes[$modelName]))) {
-            $this->definitionHashes[$modelName][] = $hash;
-        }
-
-        return array_search($hash, $this->definitionHashes);
+        return $hash;
     }
 
     private function getPrimitiveType($type)
