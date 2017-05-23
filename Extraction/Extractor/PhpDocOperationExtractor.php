@@ -73,6 +73,9 @@ class PhpDocOperationExtractor implements ExtractorInterface
         }
 
         foreach ($docBlock->getTagsByName('return') as $returnTag) {
+            if ($operation->responses[200] instanceof Response) {
+                continue;
+            }
             /* @var $returnTag \phpDocumentor\Reflection\DocBlock\Tags\Return_ */
             $response = new Response();
             $response->schema = $responseSchema = new Schema();
