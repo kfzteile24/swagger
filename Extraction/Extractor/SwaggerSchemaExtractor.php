@@ -41,8 +41,19 @@ class SwaggerSchemaExtractor implements ExtractorInterface
 
         $result = $this->serializer->deserialize($source, get_class($swagger), 'json');
 
+
         foreach ($result as $key => $value) {
-            $swagger->{$key} = $value;
+            if (is_object($swagger->{$key})) {
+                foreach (get_object_vars($result->{$key}) as $subKey => $subValue) {
+                    if ($subValue !== null) {
+                        $swagger->{$key}->{$subKey} = $subValue;
+                    }
+                }
+            }
+
+            if ($swagger->{$key} === null) {
+                $swagger->{$key} = $value;
+            }
         }
     }
 
