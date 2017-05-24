@@ -73,7 +73,7 @@ class PhpDocOperationExtractor implements ExtractorInterface
         }
 
         foreach ($docBlock->getTagsByName('return') as $returnTag) {
-            if ($operation->responses[200] instanceof Response) {
+            if (isset($operation->responses[200]) && $operation->responses[200] instanceof Response) {
                 continue;
             }
             /* @var $returnTag \phpDocumentor\Reflection\DocBlock\Tags\Return_ */
