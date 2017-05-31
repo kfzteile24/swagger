@@ -97,6 +97,11 @@ class PhpDocOperationExtractor implements ExtractorInterface
             $type = $throwTag->getType();
             /** @var \Exception $exception */
             $exceptionClass = new \ReflectionClass((string)$type);
+            
+            if ($exceptionClass->isInterface() || $exceptionClass->isAbstract() || $exceptionClass->isTrait()) {
+                continue;
+            }
+            
             $exception = $exceptionClass->newInstanceWithoutConstructor();
             list($code, $message) = $this->getExceptionInformation($exception);
             $operation->responses[$code] = $exceptionResponse = new Response();
